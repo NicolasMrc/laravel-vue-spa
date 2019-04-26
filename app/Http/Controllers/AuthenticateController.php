@@ -10,6 +10,7 @@ class AuthenticateController extends Controller
 {
 	public function authenticate(Request $request)
 	{
+
 		$rules = [
 			'email'    => 'required|email',
 			'password' => 'required'

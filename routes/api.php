@@ -18,4 +18,12 @@ Route::group(['middleware' => 'jwt.auth'], function()
     Route::get('user', 'UserController@show');
     Route::post('user/profile/update', 'UserController@updateProfile');
     Route::post('user/password/update', 'UserController@updatePassword');
+
+    Route::get('rooms', 'RoomController@index');
+    Route::post('rooms', 'RoomController@store');
+    Route::get('rooms/{room}/messages', 'MessagesController@index');
+    Route::post('rooms/{room}/messages', 'MessagesController@store');
+    Route::get('subscriptions/{room}', 'SubscriptionController@store');
+    Route::get('subscriptions', 'SubscriptionController@index');
+    Route::delete('subscriptions/{room}', 'SubscriptionController@destroy');
 });

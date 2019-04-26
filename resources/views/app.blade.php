@@ -6,7 +6,7 @@
         <meta name="author" content="Anindya Dhruba">
         <meta name="description" content="Laravel Vue SPA">
 
-        <title>{{ config('app.name') }} - Starter Boilerplate SPA made with Laravel 5.6, Bootstrap 4, JWT Auth, Vue 2, Vue-router 3, Vuex 3, Axios and <3</title>
+        <title>Slacklike - Vendredi</title>
 
         <link href="{{ mix('/css/app.css') }}" rel="stylesheet">
         <script>
@@ -16,6 +16,9 @@
                 'apiDomain' => config('app.url').'/api'
             ]) !!}
         </script>
+
+        <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
     </head>
     <body>
         <div id="app">
