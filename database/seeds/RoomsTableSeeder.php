@@ -26,5 +26,8 @@ class RoomsTableSeeder extends Seeder
         \App\Room::create([
             'name'      =>  'Sports',
         ]);
+        \App\Room::create([
+            'name'      =>  'Films',
+        ]);
     }
 }

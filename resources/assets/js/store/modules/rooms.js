@@ -12,12 +12,18 @@ export default {
         },
         fetchSubscriptions({dispatch, commit}){
             return axios.get('/api/subscriptions').then(response =>{
-                commit('setUserRooms', response.data);
+                let rooms = response.data
+                rooms.forEach(room => {
+                    room.messages = [];
+                });
+                commit('setUserRooms', rooms);
             })
         },
         subscribe({dispatch, commit}, roomId){
             return axios.get('/api/subscriptions/' + roomId).then(response =>{
-                commit('addUserRoom', response.data);
+                let room = response.data
+                room.messages = []
+                commit('addUserRoom', room);
             })
         },
         unsubscribe({dispatch, commit}, roomId){
@@ -55,22 +61,18 @@ export default {
             return state.userRooms
         },
         getSelectedRoom(state){
-            if(state.selectedRoom !== null) {
-                return state.userRooms.find(room => room.id === state.selectedRoom)
-            } else {
-                return null
-            }
+            return state.selectedRoom
         },
     },
     mutations: {
         setMessages(state, messages){
-            state.userRooms.find(r => r.id === state.selectedRoom).messages = messages
+            state.selectedRoom.messages = messages
         },
         addMessage(state, message){
-            state.userRooms.find(r => r.id === state.selectedRoom).messages.push(message)
+            state.selectedRoom.messages.push(message)
         },
         setSelectedRoom(state, roomId){
-            state.selectedRoom = roomId
+            state.selectedRoom = state.userRooms.find(r => r.id === roomId)
         },
         setRooms(state, rooms){
             state.rooms = rooms

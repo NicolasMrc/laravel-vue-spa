@@ -6,7 +6,7 @@
         <meta name="author" content="Anindya Dhruba">
         <meta name="description" content="Laravel Vue SPA">
 
-        <title>Slacklike - Vendredi</title>
+        <title>Vendredi</title>
 
         <link href="{{ mix('/css/app.css') }}" rel="stylesheet">
         <script>

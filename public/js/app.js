@@ -80319,7 +80319,11 @@ var getters = {
                 commit = _ref2.commit;
 
             return axios.get('/api/subscriptions').then(function (response) {
-                commit('setUserRooms', response.data);
+                var rooms = response.data;
+                rooms.forEach(function (room) {
+                    room.messages = [];
+                });
+                commit('setUserRooms', rooms);
             });
         },
         subscribe: function subscribe(_ref3, roomId) {
@@ -80327,7 +80331,9 @@ var getters = {
                 commit = _ref3.commit;
 
             return axios.get('/api/subscriptions/' + roomId).then(function (response) {
-                commit('addUserRoom', response.data);
+                var room = response.data;
+                room.messages = [];
+                commit('addUserRoom', room);
             });
         },
         unsubscribe: function unsubscribe(_ref4, roomId) {
@@ -80380,28 +80386,20 @@ var getters = {
             return state.userRooms;
         },
         getSelectedRoom: function getSelectedRoom(state) {
-            if (state.selectedRoom !== null) {
-                return state.userRooms.find(function (room) {
-                    return room.id === state.selectedRoom;
-                });
-            } else {
-                return null;
-            }
+            return state.selectedRoom;
         }
     },
     mutations: {
         setMessages: function setMessages(state, messages) {
-            state.userRooms.find(function (r) {
-                return r.id === state.selectedRoom;
-            }).messages = messages;
+            state.selectedRoom.messages = messages;
         },
         addMessage: function addMessage(state, message) {
-            state.userRooms.find(function (r) {
-                return r.id === state.selectedRoom;
-            }).messages.push(message);
+            state.selectedRoom.messages.push(message);
         },
         setSelectedRoom: function setSelectedRoom(state, roomId) {
-            state.selectedRoom = roomId;
+            state.selectedRoom = state.userRooms.find(function (r) {
+                return r.id === roomId;
+            });
         },
         setRooms: function setRooms(state, rooms) {
             state.rooms = rooms;
@@ -80548,6 +80546,8 @@ module.exports = Component.exports
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__shared_RoomsDrawer__ = __webpack_require__(147);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__shared_RoomsDrawer___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__shared_RoomsDrawer__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog__ = __webpack_require__(250);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog__);
 //
 //
 //
@@ -80595,24 +80595,48 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-    components: { RoomsDrawer: __WEBPACK_IMPORTED_MODULE_0__shared_RoomsDrawer___default.a },
+    components: { UsersDialog: __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog___default.a, RoomsDrawer: __WEBPACK_IMPORTED_MODULE_0__shared_RoomsDrawer___default.a },
     data: function data() {
         return {
-            featured: true
+            featured: true,
+            search: ''
         };
     },
 
-    methods: {
-        join: function join(room) {
+    computed: {
+        filteredRooms: function filteredRooms() {
             var _this = this;
 
+            if (this.search.trim() !== '') {
+                return this.rooms.filter(function (room) {
+                    return room.name.toLowerCase().includes(_this.search.toLowerCase());
+                });
+            } else {
+                return this.rooms;
+            }
+        },
+        rooms: function rooms() {
+            return this.$store.getters.getRooms || [];
+        },
+        userRooms: function userRooms() {
+            return this.$store.getters.getUserRooms || [];
+        }
+    },
+    methods: {
+        join: function join(room) {
+            var _this2 = this;
+
             this.$store.dispatch('subscribe', room.id).then(function () {
-                _this.$noty.success('Vous avez rejoinds le channel ' + room.name);
+                _this2.$noty.success('Vous avez rejoinds le channel ' + room.name);
             }).catch(function () {
-                _this.$noty.error('Oups');
+                _this2.$noty.error('Oups');
             });
         },
         hasSubscription: function hasSubscription(room) {
@@ -80621,21 +80645,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             }).length > 0;
         },
         leave: function leave(room) {
-            var _this2 = this;
+            var _this3 = this;
 
             this.$store.dispatch('unsubscribe', room.id).then(function () {
-                _this2.$noty.success('Vous avez quitté le channel ' + room.name);
+                _this3.$noty.success('Vous avez quitté le channel ' + room.name);
             }).catch(function () {
-                _this2.$noty.error('Oups');
+                _this3.$noty.error('Oups');
             });
-        }
-    },
-    computed: {
-        rooms: function rooms() {
-            return this.$store.getters.getRooms || [];
-        },
-        userRooms: function userRooms() {
-            return this.$store.getters.getUserRooms || [];
         }
     },
     created: function created() {
@@ -81562,12 +81578,12 @@ var render = function() {
                         "v-layout",
                         { attrs: { row: "", wrap: "" } },
                         [
-                          _c("v-flex", { attrs: { xs6: "" } }, [
+                          _c("v-flex", { attrs: { xs8: "" } }, [
                             _c("h3", { staticClass: "headline mb-0" }, [
                               _vm._v(
                                 _vm._s(
                                   _vm.featured
-                                    ? "Featured Channels"
+                                    ? "Channels"
                                     : "Tout les Channels"
                                 )
                               )
@@ -81576,21 +81592,27 @@ var render = function() {
                           _vm._v(" "),
                           _c(
                             "v-flex",
-                            { attrs: { xs6: "", "text-xs-right": "" } },
+                            { attrs: { xs4: "", "text-xs-right": "" } },
                             [
-                              _c(
-                                "span",
-                                { staticClass: "grey--text font-italic" },
-                                [_vm._v(" todo search")]
-                              )
-                            ]
+                              _c("v-text-field", {
+                                attrs: { label: "Recherche" },
+                                model: {
+                                  value: _vm.search,
+                                  callback: function($$v) {
+                                    _vm.search = $$v
+                                  },
+                                  expression: "search"
+                                }
+                              })
+                            ],
+                            1
                           ),
                           _vm._v(" "),
                           _c("v-flex", { attrs: { xs12: "" } }, [
                             _c("hr", { staticClass: "mb-1 mt-3" })
                           ]),
                           _vm._v(" "),
-                          _vm._l(_vm.rooms, function(room, index) {
+                          _vm._l(_vm.filteredRooms, function(room, index) {
                             return (_vm.featured
                             ? index <= 3
                             : index > -1)
@@ -81603,27 +81625,19 @@ var render = function() {
                                       { attrs: { row: "", wrap: "" } },
                                       [
                                         _c("v-flex", { attrs: { xs6: "" } }, [
-                                          _c("p", { staticClass: "pt-3" }, [
-                                            _c(
-                                              "span",
-                                              {
-                                                staticClass:
-                                                  "font-weight-light grey--text"
-                                              },
-                                              [
-                                                _c("i", {
-                                                  staticClass: "fa fa-users"
-                                                }),
-                                                _vm._v(
-                                                  _vm._s(room.users.length) +
-                                                    " "
-                                                )
-                                              ]
-                                            ),
-                                            _vm._v(
-                                              "  " + _vm._s(room.name) + " "
-                                            )
-                                          ])
+                                          _c(
+                                            "p",
+                                            { staticClass: "pt-3" },
+                                            [
+                                              _c("users-dialog", {
+                                                attrs: { users: room.users }
+                                              }),
+                                              _vm._v(
+                                                " " + _vm._s(room.name) + " "
+                                              )
+                                            ],
+                                            1
+                                          )
                                         ]),
                                         _vm._v(" "),
                                         _c(
@@ -83452,7 +83466,7 @@ exports = module.exports = __webpack_require__(3)(false);
 
 
 // module
-exports.push([module.i, "\n.messages-wrapper[data-v-6a573628]{\n    max-height : 85vh;\n    overflow: scroll;\n}\n#title[data-v-6a573628]{\n    position: relative;\n    top: -5px;\n}\n.fa.fa-paper-plane[data-v-6a573628]{\n    position: relative;\n    top: 15px;\n    color: rgba(0,0,0,.2);\n}\n.fa.fa-paper-plane[data-v-6a573628]:hover{\n    color: springgreen;\n}\n.fill-height[data-v-6a573628]{\n    height: 75vh;\n}\n", ""]);
+exports.push([module.i, "\n.messages-wrapper[data-v-6a573628]{\n    max-height : 85vh;\n    overflow: scroll;\n}\n#title[data-v-6a573628]{\n    position: relative;\n    top: -5px;\n}\n.fa.fa-paper-plane[data-v-6a573628]{\n    position: relative;\n    top: 15px;\n    color: rgba(0,0,0,.2);\n}\n.fa.fa-paper-plane[data-v-6a573628]:hover{\n    color: #4CAF50;\n}\n.fill-height[data-v-6a573628]{\n    height: 75vh;\n}\n.leave-btn[data-v-6a573628]{\n    color: rgba(0,0,0,.2);\n}\n.leave-btn[data-v-6a573628]:hover{\n    cursor:pointer;\n    color: #F44336;\n}\n.room-name[data-v-6a573628]{\n    background-color: #fafafa;\n    padding: 10px;\n    border-radius: 18px;\n    position: relative;\n    top: 33px;\n}\n", ""]);
 
 // exports
 
@@ -83465,6 +83479,8 @@ exports.push([module.i, "\n.messages-wrapper[data-v-6a573628]{\n    max-height :
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__message_Message__ = __webpack_require__(238);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__message_Message___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__message_Message__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog__ = __webpack_require__(250);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog__);
 //
 //
 //
@@ -83511,69 +83527,94 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
     name: 'room',
-    components: { Message: __WEBPACK_IMPORTED_MODULE_0__message_Message___default.a },
+    components: { UsersDialog: __WEBPACK_IMPORTED_MODULE_1__shared_UsersDialog___default.a, Message: __WEBPACK_IMPORTED_MODULE_0__message_Message___default.a },
     data: function data() {
         return {
             newMessage: '',
-            loading: true
+            loading: true,
+            sync: true
         };
     },
 
     methods: {
+        leave: function leave() {
+            var _this = this;
+
+            var name = this.room.name;
+            this.$store.dispatch('unsubscribe', this.room.id).then(function () {
+                _this.$router.push({ name: 'index' });
+                _this.$noty.success('Vous avez quitté le channel ' + name);
+            }).catch(function (e) {
+                _this.$noty.error('Oups');
+                console.log(e);
+            });
+        },
         scroll: function scroll() {
-            if ($('#last-message').length > 0) {
+            if ($('#last-message') !== null && $('#last-message').length > 0) {
                 this.$scrollTo('#last-message', 1000, { container: '#container', easing: 'ease', cancelable: false });
             }
         },
         sendMessage: function sendMessage() {
-            var _this = this;
+            var _this2 = this;
 
             if (this.newMessage.trim() !== '') {
                 this.$store.dispatch('sendMessage', { roomId: this.roomId, message: this.newMessage }).then(function () {
-                    _this.newMessage = '';
-                    _this.scroll();
+                    _this2.newMessage = '';
+                    _this2.scroll();
                 }).catch(function (e) {
-                    _this.$noty.error('Oups');
+                    _this2.$noty.error('Oups');
                     console.log(e);
                 });
             }
         },
         fetchMessages: function fetchMessages(val) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (val !== null) {
-                if (this.roomId === null) {
+                if (this.roomId === null && this.room !== null) {
                     this.$router.push({ name: 'index' });
                 } else {
                     this.$store.dispatch('enterRoom', this.roomId).then(function () {
-                        _this2.loading = false;
-                        _this2.scroll();
+                        _this3.loading = false;
+                        _this3.scroll();
                     }).catch(function (e) {
                         console.log(e);
-                        _this2.$noty.error('Oups');
+                        _this3.$noty.error('Oups');
                     });
                 }
             }
+        },
+        syncMessages: function syncMessages() {
+            if (this.sync) {
+                this.fetchMessages();
+            }
+            setTimeout(this.syncMessages, 5000);
         }
     },
     computed: {
-        countMessages: function countMessages() {
-            return this.$store.getters.getSelectedRoom.messages || null;
-        },
-        messages: function messages() {
-            if (this.room.messages !== undefined) {
-                return this.room.messages.sort(function (a, b) {
-                    return a.created_at > b.created_at;
-                }) || null;
-            } else {
-                return [];
-            }
-        },
         room: function room() {
             return this.$store.getters.getSelectedRoom || null;
         },
@@ -83591,11 +83632,18 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         if (this.subscriptions !== null && this.subscriptions.length > 0) {
             this.fetchMessages(this.subscriptions);
         }
+        setTimeout(this.syncMessages, 5000);
     },
 
     watch: {
         subscriptions: function subscriptions(val) {
-            this.fetchMessages(val);
+            var _this4 = this;
+
+            if (val.filter(function (r) {
+                return r.id === _this4.roomId;
+            }).length > 0) {
+                this.fetchMessages(val);
+            }
         },
         roomId: function roomId(val) {
             this.fetchMessages(this.subscriptions);
@@ -83777,13 +83825,90 @@ var render = function() {
         },
         [
           !_vm.loading && _vm.room !== null
-            ? _c("v-flex", { attrs: { xs12: "", "text-xs-center": "" } }, [
-                _c("span", { staticClass: "grey--text" }, [
-                  _vm._v(_vm._s(_vm.room.name))
-                ]),
-                _vm._v(" "),
-                _c("hr")
-              ])
+            ? _c(
+                "v-flex",
+                { attrs: { xs12: "" } },
+                [
+                  _c(
+                    "v-layout",
+                    { attrs: { row: "", wrap: "" } },
+                    [
+                      _c(
+                        "v-flex",
+                        { attrs: { xs4: "" } },
+                        [
+                          _c("users-dialog", {
+                            attrs: { users: _vm.room.users }
+                          })
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "v-flex",
+                        { attrs: { xs4: "", "text-xs-center": "" } },
+                        [
+                          _c("span", { staticClass: "grey--text room-name" }, [
+                            _vm._v(_vm._s(_vm.room.name))
+                          ])
+                        ]
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "v-flex",
+                        { attrs: { xs4: "", "text-xs-right": "" } },
+                        [
+                          _c(
+                            "v-tooltip",
+                            {
+                              attrs: { bottom: "" },
+                              scopedSlots: _vm._u(
+                                [
+                                  {
+                                    key: "activator",
+                                    fn: function(ref) {
+                                      var on = ref.on
+                                      return [
+                                        _c(
+                                          "i",
+                                          _vm._g(
+                                            {
+                                              staticClass:
+                                                "leave-btn fa fa-lg fa-sign-out-alt",
+                                              on: {
+                                                click: function($event) {
+                                                  return _vm.leave()
+                                                }
+                                              }
+                                            },
+                                            on
+                                          )
+                                        )
+                                      ]
+                                    }
+                                  }
+                                ],
+                                null,
+                                false,
+                                1608470343
+                              )
+                            },
+                            [
+                              _vm._v(" "),
+                              _c("span", [_vm._v("Quitter le channel")])
+                            ]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c("v-flex", { attrs: { xs12: "" } }, [_c("hr")])
+                    ],
+                    1
+                  )
+                ],
+                1
+              )
             : _vm._e(),
           _vm._v(" "),
           _c(
@@ -83795,7 +83920,7 @@ var render = function() {
             [
               !_vm.loading && _vm.room !== null
                 ? _c("div", [
-                    _vm.messages.length > 0
+                    _vm.room.messages.length > 0
                       ? _c(
                           "div",
                           { staticClass: "scroll-y overflow-x-hidden" },
@@ -83806,7 +83931,10 @@ var render = function() {
                                 staticClass: "overflow-hidden",
                                 attrs: { row: "", wrap: "" }
                               },
-                              _vm._l(_vm.messages, function(message, index) {
+                              _vm._l(_vm.room.messages, function(
+                                message,
+                                index
+                              ) {
                                 return _c(
                                   "v-flex",
                                   {
@@ -83822,7 +83950,7 @@ var render = function() {
                                     _c("message", {
                                       attrs: {
                                         id:
-                                          index === _vm.messages.length - 1
+                                          index === _vm.room.messages.length - 1
                                             ? "last-message"
                                             : "",
                                         message: message,
@@ -84061,6 +84189,287 @@ if (false) {
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 248 */,
+/* 249 */,
+/* 250 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+function injectStyle (ssrContext) {
+  if (disposed) return
+  __webpack_require__(253)
+}
+var normalizeComponent = __webpack_require__(1)
+/* script */
+var __vue_script__ = __webpack_require__(251)
+/* template */
+var __vue_template__ = __webpack_require__(255)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = injectStyle
+/* scopeId */
+var __vue_scopeId__ = "data-v-1aa9a1fd"
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources/assets/js/components/shared/UsersDialog.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-1aa9a1fd", Component.options)
+  } else {
+    hotAPI.reload("data-v-1aa9a1fd", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 251 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+    name: "usersDialog",
+    props: ['users'],
+    data: function data() {
+        return {
+            dialog: false
+        };
+    }
+});
+
+/***/ }),
+/* 252 */,
+/* 253 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(254);
+if(typeof content === 'string') content = [[module.i, content, '']];
+if(content.locals) module.exports = content.locals;
+// add the styles to the DOM
+var update = __webpack_require__(5)("3f20013f", content, false, {});
+// Hot Module Replacement
+if(false) {
+ // When the styles change, update the <style> tags
+ if(!content.locals) {
+   module.hot.accept("!!../../../../../node_modules/css-loader/index.js!../../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-1aa9a1fd\",\"scoped\":true,\"hasInlineConfig\":true}!../../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./UsersDialog.vue", function() {
+     var newContent = require("!!../../../../../node_modules/css-loader/index.js!../../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-1aa9a1fd\",\"scoped\":true,\"hasInlineConfig\":true}!../../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./UsersDialog.vue");
+     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+     update(newContent);
+   });
+ }
+ // When the module is disposed, remove the <style> tags
+ module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 254 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(3)(false);
+// imports
+
+
+// module
+exports.push([module.i, "\n.button-users[data-v-1aa9a1fd]{\n    cursor: pointer;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 255 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "v-dialog",
+    {
+      attrs: { "max-width": "600px" },
+      scopedSlots: _vm._u([
+        {
+          key: "activator",
+          fn: function(ref) {
+            var on = ref.on
+            return [
+              _c(
+                "span",
+                _vm._g(
+                  {
+                    staticClass: "grey--text button-users",
+                    on: {
+                      click: function($event) {
+                        _vm.dialog = true
+                      }
+                    }
+                  },
+                  on
+                ),
+                [
+                  _c("i", { staticClass: "fa fa-users" }),
+                  _vm._v(" " + _vm._s(_vm.users.length))
+                ]
+              )
+            ]
+          }
+        }
+      ]),
+      model: {
+        value: _vm.dialog,
+        callback: function($$v) {
+          _vm.dialog = $$v
+        },
+        expression: "dialog"
+      }
+    },
+    [
+      _vm._v(" "),
+      _c(
+        "v-card",
+        [
+          _c("v-card-title", [
+            _c("span", { staticClass: "headline" }, [
+              _vm._v("Membres du channel")
+            ])
+          ]),
+          _vm._v(" "),
+          _c(
+            "v-card-text",
+            [
+              _c(
+                "v-container",
+                { attrs: { "grid-list-md": "" } },
+                [
+                  _c(
+                    "v-layout",
+                    { attrs: { wrap: "" } },
+                    [
+                      _c(
+                        "v-flex",
+                        { attrs: { xs12: "" } },
+                        _vm._l(_vm.users, function(user) {
+                          return _c(
+                            "v-chip",
+                            { key: user.email },
+                            [
+                              _c(
+                                "v-avatar",
+                                { staticClass: "green white--text" },
+                                [_vm._v(_vm._s(user.name.charAt(0)))]
+                              ),
+                              _vm._v(
+                                "\n                            " +
+                                  _vm._s(user.name) +
+                                  "\n                        "
+                              )
+                            ],
+                            1
+                          )
+                        }),
+                        1
+                      )
+                    ],
+                    1
+                  )
+                ],
+                1
+              )
+            ],
+            1
+          ),
+          _vm._v(" "),
+          _c(
+            "v-card-actions",
+            [
+              _c("v-spacer"),
+              _vm._v(" "),
+              _c(
+                "v-btn",
+                {
+                  attrs: { color: "blue darken-1", flat: "" },
+                  on: {
+                    click: function($event) {
+                      _vm.dialog = false
+                    }
+                  }
+                },
+                [_vm._v("Fermer")]
+              )
+            ],
+            1
+          )
+        ],
+        1
+      )
+    ],
+    1
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-1aa9a1fd", module.exports)
+  }
+}
 
 /***/ })
 /******/ ]);

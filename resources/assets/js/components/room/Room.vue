@@ -1,16 +1,33 @@
 <template>
     <div class="h-100">
         <v-layout align-space-between justify-space-between column fill-height>
-            <v-flex xs12 text-xs-center v-if="!loading && room !== null">
-                <span class="grey--text">{{room.name}}</span>
-                <hr>
+            <v-flex xs12 v-if="!loading && room !== null">
+                <v-layout row wrap>
+                    <v-flex xs4>
+                        <users-dialog :users="room.users"/>
+                    </v-flex>
+                    <v-flex xs4 text-xs-center>
+                        <span class="grey--text room-name">{{room.name}}</span>
+                    </v-flex>
+                    <v-flex xs4 text-xs-right>
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on }">
+                                <i @click="leave()" class="leave-btn fa fa-lg fa-sign-out-alt" v-on="on"></i>
+                            </template>
+                            <span>Quitter le channel</span>
+                        </v-tooltip>
+                    </v-flex>
+                    <v-flex xs12>
+                        <hr>
+                    </v-flex>
+                </v-layout>
             </v-flex>
             <v-flex xs12 grow class="scroll-y" id="container">
                 <div v-if="!loading && room !== null">
-                    <div v-if="messages.length > 0" class="scroll-y overflow-x-hidden" >
+                    <div v-if="room.messages.length > 0" class="scroll-y overflow-x-hidden" >
                         <v-layout row wrap class="overflow-hidden" >
-                            <v-flex xs12 v-for="(message, index) in messages" :key="message.id" :class="message.user.email === userEmail ? 'text-xs-right' : 'text-xs-left'" class="msg">
-                                <message :id="index === messages.length - 1 ? 'last-message' : ''" :message="message" :isAuthor="message.user.email === userEmail"/>
+                            <v-flex xs12 v-for="(message, index) in room.messages" :key="message.id" :class="message.user.email === userEmail ? 'text-xs-right' : 'text-xs-left'" class="msg">
+                                <message :id="index === room.messages.length - 1 ? 'last-message' : ''" :message="message" :isAuthor="message.user.email === userEmail"/>
                             </v-flex>
                         </v-layout>
                     </div>
@@ -46,19 +63,31 @@
 
 <script>
     import Message from "../message/Message";
+    import UsersDialog from "../shared/UsersDialog";
 
     export default {
         name:'room',
-        components: {Message},
+        components: {UsersDialog, Message},
         data() {
             return {
                 newMessage : '',
-                loading : true
+                loading : true,
+                sync : true,
             }
         },
         methods: {
+            leave(){
+                let name = this.room.name
+                this.$store.dispatch('unsubscribe', this.room.id).then(() => {
+                    this.$router.push({name: 'index'});
+                    this.$noty.success('Vous avez quitté le channel ' + name);
+                }).catch(e => {
+                    this.$noty.error('Oups');
+                    console.log(e)
+                })
+            },
             scroll(){
-                if($('#last-message').length > 0){
+                if($('#last-message') !== null && $('#last-message').length > 0){
                     this.$scrollTo('#last-message', 1000, { container: '#container',easing: 'ease', cancelable: false })
                 }
             },
@@ -75,7 +104,7 @@
             },
             fetchMessages(val){
                 if(val !== null){
-                    if(this.roomId === null){
+                    if(this.roomId === null && this.room !== null){
                         this.$router.push({name : 'index'})
                     } else {
                         this.$store.dispatch('enterRoom', this.roomId).then(()=>{
@@ -87,19 +116,15 @@
                         })
                     }
                 }
+            },
+            syncMessages(){
+                if (this.sync){
+                    this.fetchMessages()
+                }
+                setTimeout(this.syncMessages, 5000)
             }
         },
         computed: {
-            countMessages(){
-                return this.$store.getters.getSelectedRoom.messages || null
-            },
-            messages(){
-                if(this.room.messages !== undefined){
-                    return this.room.messages.sort((a,b) => a.created_at > b.created_at) || null
-                } else {
-                    return []
-                }
-            },
             room(){
                 return this.$store.getters.getSelectedRoom || null
             },
@@ -117,10 +142,13 @@
             if(this.subscriptions !== null && this.subscriptions.length > 0){
                 this.fetchMessages(this.subscriptions)
             }
+            setTimeout(this.syncMessages, 5000);
         },
         watch : {
             subscriptions : function(val){
-                this.fetchMessages(val)
+                if(val.filter(r => r.id === this.roomId).length > 0){
+                    this.fetchMessages(val)
+                }
             },
             roomId : function(val){
                 this.fetchMessages(this.subscriptions)
@@ -146,10 +174,27 @@
         color: rgba(0,0,0,.2);
     }
     .fa.fa-paper-plane:hover{
-        color: springgreen;
+        color: #4CAF50;
     }
 
     .fill-height{
         height: 75vh;
+    }
+
+    .leave-btn{
+        color: rgba(0,0,0,.2);
+    }
+    
+    .leave-btn:hover{
+        cursor:pointer;
+        color: #F44336;
+    }
+
+    .room-name{
+        background-color: #fafafa;
+        padding: 10px;
+        border-radius: 18px;
+        position: relative;
+        top: 33px;
     }
 </style>

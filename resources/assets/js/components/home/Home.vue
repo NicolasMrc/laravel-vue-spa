@@ -10,19 +10,22 @@
                 <v-card>
                     <v-card-title primary-title>
                         <v-layout row wrap>
-                            <v-flex xs6>
-                                <h3 class="headline mb-0">{{featured ? 'Featured Channels' : 'Tout les Channels'}}</h3>
+                            <v-flex xs8>
+                                <h3 class="headline mb-0">{{featured ? 'Channels' : 'Tout les Channels'}}</h3>
                             </v-flex>
-                            <v-flex xs6 text-xs-right>
-                                <span class="grey--text font-italic"> todo search</span>
+                            <v-flex xs4 text-xs-right>
+                                <v-text-field
+                                        label="Recherche"
+                                        v-model="search"
+                                ></v-text-field>
                             </v-flex>
                             <v-flex xs12>
                                 <hr class="mb-1 mt-3">
                             </v-flex>
-                            <v-flex xs12 v-for="(room, index) in rooms" :key="room.name" v-if="featured ? index <= 3 : index > -1">
+                            <v-flex xs12 v-for="(room, index) in filteredRooms" :key="room.name" v-if="featured ? index <= 3 : index > -1">
                                 <v-layout row wrap>
                                     <v-flex xs6>
-                                        <p class="pt-3"><span class="font-weight-light grey--text"><i class="fa fa-users"></i>{{room.users.length}} </span>  {{room.name}} </p>
+                                        <p class="pt-3"><users-dialog :users="room.users"/> {{room.name}} </p>
                                     </v-flex>
                                     <v-flex xs6 class="text-xs-right">
                                         <v-btn v-if="!hasSubscription(room)" color="success" @click="join(room)">Rejoindre</v-btn>
@@ -47,11 +50,28 @@
 
 <script>
     import RoomsDrawer from "../shared/RoomsDrawer";
+    import UsersDialog from "../shared/UsersDialog";
     export default {
-        components: {RoomsDrawer},
+        components: {UsersDialog, RoomsDrawer},
         data() {
             return {
-                featured : true
+                featured : true,
+                search : ''
+            }
+        },
+        computed: {
+            filteredRooms(){
+                if(this.search.trim() !== ''){
+                    return this.rooms.filter(room => room.name.toLowerCase().includes(this.search.toLowerCase()))
+                } else {
+                    return this.rooms
+                }
+            },
+            rooms(){
+                return this.$store.getters.getRooms || []
+            },
+            userRooms(){
+                return this.$store.getters.getUserRooms || []
             }
         },
         methods: {
@@ -71,14 +91,6 @@
                 }).catch(() => {
                     this.$noty.error('Oups');
                 })
-            }
-        },
-        computed: {
-            rooms(){
-                return this.$store.getters.getRooms || []
-            },
-            userRooms(){
-                return this.$store.getters.getUserRooms || []
             }
         },
         created(){
