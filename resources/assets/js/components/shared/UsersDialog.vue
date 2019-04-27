@@ -15,6 +15,7 @@
                                 <v-avatar class="green white--text">{{user.name.charAt(0)}}</v-avatar>
                                 {{user.name}}
                             </v-chip>
+                            <span v-if="users.length === 0" class="font-italic grey--text">Pas de membres pour le moment</span>
                         </v-flex>
                     </v-layout>
                 </v-container>

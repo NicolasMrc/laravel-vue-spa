@@ -32,6 +32,7 @@ export default {
             })
         },
         enterRoom({dispatch, commit, state}, roomId){
+            console.log(roomId)
             commit('setSelectedRoom', roomId)
             return axios.get('/api/rooms/' + roomId + '/messages').then(response =>{
                 commit('setMessages', response.data);

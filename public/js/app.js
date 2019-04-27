@@ -80400,6 +80400,7 @@ var getters = {
                 commit = _ref5.commit,
                 state = _ref5.state;
 
+            console.log(roomId);
             commit('setSelectedRoom', roomId);
             return axios.get('/api/rooms/' + roomId + '/messages').then(function (response) {
                 commit('setMessages', response.data);
@@ -81646,6 +81647,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
     name: "usersDialog",
@@ -81730,26 +81732,36 @@ var render = function() {
                       _c(
                         "v-flex",
                         { attrs: { xs12: "" } },
-                        _vm._l(_vm.users, function(user) {
-                          return _c(
-                            "v-chip",
-                            { key: user.email },
-                            [
-                              _c(
-                                "v-avatar",
-                                { staticClass: "green white--text" },
-                                [_vm._v(_vm._s(user.name.charAt(0)))]
-                              ),
-                              _vm._v(
-                                "\n                            " +
-                                  _vm._s(user.name) +
-                                  "\n                        "
+                        [
+                          _vm._l(_vm.users, function(user) {
+                            return _c(
+                              "v-chip",
+                              { key: user.email },
+                              [
+                                _c(
+                                  "v-avatar",
+                                  { staticClass: "green white--text" },
+                                  [_vm._v(_vm._s(user.name.charAt(0)))]
+                                ),
+                                _vm._v(
+                                  "\n                            " +
+                                    _vm._s(user.name) +
+                                    "\n                        "
+                                )
+                              ],
+                              1
+                            )
+                          }),
+                          _vm._v(" "),
+                          _vm.users.length === 0
+                            ? _c(
+                                "span",
+                                { staticClass: "font-italic grey--text" },
+                                [_vm._v("Pas de membres pour le moment")]
                               )
-                            ],
-                            1
-                          )
-                        }),
-                        1
+                            : _vm._e()
+                        ],
+                        2
                       )
                     ],
                     1
@@ -83933,7 +83945,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             }
         },
         syncMessages: function syncMessages() {
-            if (this.sync) {
+            if (this.sync && !isNaN(this.roomId)) {
                 this.fetchMessages();
             }
             setTimeout(this.syncMessages, 5000);

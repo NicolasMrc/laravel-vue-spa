@@ -118,7 +118,7 @@
                 }
             },
             syncMessages(){
-                if (this.sync){
+                if (this.sync && !isNaN(this.roomId)){
                     this.fetchMessages()
                 }
                 setTimeout(this.syncMessages, 5000)
