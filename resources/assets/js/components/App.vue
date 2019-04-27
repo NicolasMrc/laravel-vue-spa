@@ -1,21 +1,32 @@
 <template>
-	<div>
-		<top-menu></top-menu>
+	<v-app>
 		<transition name="fade" mode="out-in">
-			<router-view></router-view>
+			<rooms-drawer>
+				<router-view></router-view>
+			</rooms-drawer>
 		</transition>
-		<app-footer></app-footer>
-	</div>
+	</v-app>
 </template>
 
 <script>
-	import TopMenu from './shared/TopMenu.vue';
-	import AppFooter from './shared/AppFooter.vue';
+    import RoomsDrawer from "./shared/RoomsDrawer";
 
 	export default {
+	    computed : {
+            isLoggedIn(){
+                return this.$store.getters.isLoggedIn
+            }
+		},
 		components: {
-			'top-menu': TopMenu,
-			'app-footer': AppFooter
+            RoomsDrawer,
+		},
+		watch:{
+	        isLoggedIn : function(val){
+	            if(val){
+                    this.$store.dispatch('fetchRooms').then()
+                    this.$store.dispatch('fetchSubscriptions').then()
+				}
+			}
 		}
 	}
 </script>

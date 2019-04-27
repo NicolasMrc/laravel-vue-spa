@@ -2,10 +2,45 @@ import $ from 'jquery';
 import Vue from 'vue';
 import VueNoty from 'vuejs-noty';
 import axios from 'axios';
+import Vuetify from 'vuetify'
+
+import 'vuetify/dist/vuetify.min.css'
+
+import moment from 'moment'
+
+Vue.filter('formatDate', function(value) {
+    if (value) {
+        return moment(String(value)).format('DD/MM HH:mm')
+    }
+})
+
+Vue.use(Vuetify)
+
+var VueScrollTo = require('vue-scrollto');
+
+Vue.use(VueScrollTo)
+
+// You can also pass in the default options
+Vue.use(VueScrollTo, {
+    container: "body",
+    duration: 500,
+    easing: "ease",
+    offset: 0,
+    force: true,
+    cancelable: true,
+    onStart: false,
+    onDone: false,
+    onCancel: false,
+    x: false,
+    y: true
+})
+
 
 window.$ = window.jQuery = $;
 window.axios = axios;
+
 require('bootstrap');
+require('bootstrap/dist/css/bootstrap.min.css');
 
 Vue.use(VueNoty, {
 	progressBar: false,

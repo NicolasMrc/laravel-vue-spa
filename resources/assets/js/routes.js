@@ -4,13 +4,14 @@ import ProfileWrapper from './components/profile/ProfileWrapper.vue';
 import Profile from './components/profile/Profile.vue';
 import EditProfile from './components/profile/edit-profile/EditProfile.vue';
 import EditPassword from './components/profile/edit-password/EditPassword.vue';
+import Room from './components/room/Room';
 
 export default [
 	{
 		path: '/',
 		name: 'index',
 		component: Home,
-		meta: {}
+        meta: {requiresAuth: true}
 	},
 	{
 		path: '/login',
@@ -18,6 +19,12 @@ export default [
 		component: Login,
 		meta: {requiresGuest: true}
 	},
+    {
+        path: '/room/:id',
+        name: 'room',
+        component: Room,
+        meta: {requiresAuth: true}
+    },
 	{
 		path: '/profile',
 		component: ProfileWrapper,
